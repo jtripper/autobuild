@@ -28,7 +28,7 @@ Then run the autobuild script:
 
 ## Dependencies
 
-Autobuild requires the inotify ruby gem to run [https://github.com/jtRIPper/inotify].
+Autobuild requires the [inotify ruby gem](https://github.com/jtRIPper/inotify) to run.
 ## License
 
 GPLv2
