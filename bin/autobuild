@@ -1,0 +1,129 @@
+#!/usr/bin/env ruby
+# autobuild
+# (C) 2013 jtRIPper
+# 
+# This program is free software; you can redistribute it and/or modify
+# it under the terms of the GNU General Public License as published by
+# the Free Software Foundation; either version 1, or (at your option)
+# any later version.
+# 
+# This program is distributed in the hope that it will be useful,
+# but WITHOUT ANY WARRANTY; without even the implied warranty of
+# MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.  See the
+# GNU General Public License for more details.
+# 
+# You should have received a copy of the GNU General Public License
+# along with this program; if not, write to the Free Software
+# Foundation, Inc., 675 Mass Ave, Cambridge, MA 02139, USA.
+
+require 'inotify'
+require 'optparse'
+
+# print a command with two spaces before each line.
+def pp_cmd(cmd)
+  puts ""
+  `#{cmd}`.split("\n").each { |line|
+    puts "    #{line}"
+  }
+end
+
+# wait for an event on a directory
+def wait_edit(directory)
+  inotify = Inotify.new
+  inotify.recursive_add_watch(directory, InotifyEvents::IN_MODIFY|InotifyEvents::IN_CLOSE_WRITE)
+
+  inotify.wait_for_event() { |path, mask, name|
+    yield path, name
+  }
+
+  inotify.rm_all_watches()
+end
+
+# loop over events
+def loop_edits(directory)
+  while 1
+    wait_edit(directory) { |path, name|
+      yield path, name
+    }
+  end
+end
+
+# returns true if the regex in a list matches the string
+def match_re_list?(string, list) 
+  return list.select { |re| re.match(string) }.length > 0
+end
+
+# parse the configuration file
+def parse_config(path)
+  def get_option(name)
+    AutobuildConfig.class_variable_get "@@#{name}".to_sym
+  end
+
+  require path
+
+  options = {}
+  begin
+    options["project_dir"] = get_option("project_directory")
+    options["build"] = get_option("build")
+    options["execute"] = get_option("execute")
+    options["include_files"] = get_option("include_files")
+    options["exclude_files"] = get_option("exclude_files")
+  rescue NameError
+    puts "Required options:"
+    puts "  project_directory"
+    puts "  build"
+    puts "  execute"
+    puts "  include_files"
+    puts "  exclude_files"
+    exit
+  end
+  options
+end
+
+options = {}
+
+opt_parse = OptionParser.new do |opts|
+  opts.banner = "Usage: #{$0} [options]"
+  opts.on("-c", "--config CONFIG", "Configuration file") do |c|
+    options[:config] = c
+  end
+end
+
+opt_parse.parse!
+
+unless options[:config]
+  puts opt_parse
+  exit
+end
+
+full_path = File.expand_path("#{options[:config]}", Dir.pwd)
+if File.exists? full_path
+  options = parse_config(full_path)
+else
+  puts "#{full_path} does not exist."
+  exit
+end
+
+puts " [*] Project directory: #{options["project_dir"]}"
+puts " [*] Build command:     #{options["build"]}"
+puts " [*] Execute command:   #{options["execute"]}"
+
+Dir.chdir options["project_dir"]
+
+begin
+  loop_edits(options["project_dir"]) { |path, name|
+    # make sure that the path matches the include_files
+    next unless match_re_list?("#{path}/#{name}", options["include_files"])
+    # make sure that the exclude_files do not match
+    next if match_re_list?("#{path}/#{name}", options["exclude_files"])
+
+    # build and execute
+    puts "\n [*] #{path}/#{name} edited."
+    puts " [*] Building..."
+    pp_cmd(options["build"])
+    puts "\n [*] Executing..."
+    pp_cmd(options["execute"])
+  }
+rescue Interrupt
+  puts "\nCaught ^C, quitting."
+end
