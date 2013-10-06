@@ -1,6 +1,6 @@
 Gem::Specification.new do |s|
   s.name        = 'autobuilder'
-  s.version     = '1.0.0'
+  s.version     = '1.0.1'
   s.date        = '2013-10-06'
   s.summary     = "autobuild"
   s.description = "automatically build project on file save"
