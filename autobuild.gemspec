@@ -1,5 +1,5 @@
 Gem::Specification.new do |s|
-  s.name        = 'autobuild'
+  s.name        = 'autobuilder'
   s.version     = '1.0.0'
   s.date        = '2013-10-06'
   s.summary     = "autobuild"
@@ -9,6 +9,6 @@ Gem::Specification.new do |s|
   s.files       = [ ]
   s.executables << "autobuild"
   s.add_runtime_dependency "inotify", "~>1.0"
-  s.homepage    = ""
-  s.license     = "GPL"
+  s.homepage    = "https://github.com/jtripper/autobuild"
+  s.license     = "GPLv2"
 end

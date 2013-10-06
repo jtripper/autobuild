@@ -3,6 +3,14 @@ autobuild
 
 Autobuild is a ruby gem that will run a command when a change is made in a project directory, to configure write an autobuild.rb file:
 
+## Installation
+
+Autobuild can be installed with ruby gems:
+
+  $ gem install autobuilder
+
+## Usage
+
 ```ruby
 class AutobuildConfig
   # Directory of project
@@ -24,11 +32,12 @@ end
 
 Then run the autobuild script:
 
-  autobuild -c autobuild.rb
+  $ autobuild -c autobuild.rb
 
 ## Dependencies
 
 Autobuild requires the [inotify ruby gem](https://github.com/jtRIPper/inotify) to run.
+
 ## License
 
 GPLv2
